@@ -4,19 +4,36 @@ html, body{
 
 body{
     margin: 0;
-    background-color: #0c0c0c;
+    background-color: #0c0c0f;
     color: #eeeeee;
-    font-family: system-ui, "Segoe UI","Roboto",Helvetica,Arial
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
 }
 
-.title-div{
+.title-div, .random-button-div{
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+.random-button-div {
+    margin-top: 2rem;
+}
+
+button {
+    appearance: none;
+    border: 2px solid #303136;
+    background-color: #202125;
+    color: #eeeeee;
+    padding: 0.5rem;
+    border-radius: 1rem;
+}
+
+button:hover{
+    background-color: #1a1c1f;
+}
+
 h1 {
-    font-size: 100px;
+    font-size: 6rem;
     margin-top: 3rem;
     margin-bottom: 1rem;
 }
