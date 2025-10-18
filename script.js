@@ -1,0 +1,5 @@
+const audio = document.getElementById("audio")
+audio.src = "https://storage.googleapis.com/kagglesdsdata/datasets/829978/1417968/harvard.wav?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=databundle-worker-v2%40kaggle-161607.iam.gserviceaccount.com%2F20251017%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20251017T000541Z&X-Goog-Expires=345600&X-Goog-SignedHeaders=host&X-Goog-Signature=76810d9c3296c625a4b5563ba47f49703393ce8feda054536e9f96ad27c146bbcb15ffda54aacbf6e1a6371a83b65c45f38fe7a7b041a7541c455b12828e61cb708dc5424b19fbd498ef572886f0ed736da4e341e27a994c9a3d2b796c91b7be9cf297a8214e40a3510a38923e885f655312ba54553e8618cc7292d12219f21d01a4cc2e6b30c4ab417d5deb6b69219b433a256098c76b54c9f1bb836ee983fd754157b3a155a06ccce139cd44fd1a0b0cc92a2d972058a2659ae5e43550aca7614f5bcccf8f3a99de3d0cdafe50c31af7de5bcfb79fcb6e2f3580da2ee9b59100abd949dc1e56561271bf51678e4243effa89229aeffd18b10dfd610b3a09f6"
+setTimeout(() => {
+    audio.play()
+}, 3000)
