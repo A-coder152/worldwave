@@ -16,11 +16,15 @@ let audio_sources = [
     "https://cdn.freesound.org/previews/829/829713_12698134-lq.mp3"
 ]
 
-random_audio_button.addEventListener("click", () => {
-    audio.src = audio_sources[Math.floor(Math.random() * audio_sources.length)]
-    audio.play()
+let stations = []
+
+api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true").then(results =>{
+    console.log(results)
+    stations = results
 })
 
-api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true").then(stations =>{
-    console.log(stations)
+random_audio_button.addEventListener("click", () => {
+    let chosen_station = stations[Math.floor(Math.random() * stations.length)]
+    audio.src = chosen_station.url_resolved
+    audio.play()
 })
