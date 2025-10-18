@@ -6,11 +6,7 @@ function api_request(api, rqdict){
         if (!response.ok) {
             throw new Error(`error ${res} code ${res.status} caused by request at ${api} for ${rqdict}`)
         }
-        return response.json
-    }).then(thingy => {
-        return thingy
-    }).catch(problem => {
-        console.log(problem)
+        return response.json()
     })
 }
 
@@ -25,6 +21,6 @@ random_audio_button.addEventListener("click", () => {
     audio.play()
 })
 
-// setTimeout(() => {
-//     audio.play()
-// }, 3000)
+api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true").then(stations =>{
+    console.log(stations)
+})
