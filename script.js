@@ -5,12 +5,6 @@ const lat_input = document.getElementById("latInput")
 const long_input = document.getElementById("longInput")
 const lat_long_btn = document.getElementById("latLongBtn")
 
-let audio_sources = [
-    "https://cdn.freesound.org/previews/829/829942_9034501-lq.mp3",
-    "https://cdn.freesound.org/previews/829/829707_10956972-lq.mp3",
-    "https://cdn.freesound.org/previews/829/829713_12698134-lq.mp3"
-]
-
 let all_stations = []
 let close_stations = []
 let latitude = 0
@@ -19,7 +13,7 @@ let longitude = 0
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
         if (!response.ok) {
-            throw new Error(`error ${res} code ${res.status} caused by request at ${api} for ${rqdict}`)
+            throw new Error(`error ${response} code ${response.status} caused by request at ${api} for ${rqdict}`)
         }
         return response.json()
     })

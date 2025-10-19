@@ -26,7 +26,7 @@ body{
     gap: 1rem;
 }
 
-button {
+button, input {
     appearance: none;
     border: 2px solid #303236;
     background-color: #202124;
@@ -34,6 +34,14 @@ button {
     padding: 0.42rem 0.7rem;
     border-radius: 1rem;
     transition: background-color 0.2s;
+}
+
+input {
+    -moz-appearance: textfield;
+    -webkit-appearance: textfield;
+    border-radius: 0.3rem;
+    border-color: #50545a;
+    background-color: #36383f;
 }
 
 button:hover{
@@ -48,4 +56,13 @@ h1 {
 
 p {
     margin: 0;
+}
+
+input[type='number'] {
+    -moz-appearance:textfield;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
 }
