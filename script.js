@@ -31,11 +31,15 @@ function clamp(a, max, min){
 
 function updateStation(station, list){
     audio.src = station.url_resolved
-    audio.play().catch(() => {
-        // list.splice(list.indexOf(station), 1)
-        // updateStation(list[0], list)
-        console.log("this guy is broken")
+    audio.play().catch((error) => {
+        console.log("this guy is broken", error)
+        if (error.name === "AbortError") {return}
+        setTimeout(() => {
+            list.splice(list.indexOf(station), 1)
+            updateStation(list[0], list)
+        }, 0)   
     })
+
     info_div.innerHTML = `
     <p>Radio Name: ${station.name}</p>
     <p>Country: ${station.country}</p>`
@@ -48,18 +52,18 @@ function sortByDistance(sortee) {
     })
 }
 
-api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
+api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100").then(results =>{
     console.log(results)
     all_stations = results
+    api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
+        console.log(results)
+        all_stations = results
+    })
 })
 
 random_audio_button.addEventListener("click", () => {
     let chosen_station = all_stations[Math.floor(Math.random() * all_stations.length)]
     updateStation(chosen_station, all_stations)
-})
-
-api_request("https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=35&geo_long=140&geo_distance=100000&order=geo_distance").then(results => {
-    console.log(results)
 })
 
 lat_long_btn.addEventListener("click", async () => {
@@ -68,10 +72,10 @@ lat_long_btn.addEventListener("click", async () => {
     close_stations = []
     let while_counter = 0
     do {
-        const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=${Math.pow(10, (while_counter / 10) + 3)}`)
+        const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=${Math.pow(10, while_counter + 3)}`)
         close_stations = results
         while_counter += 1
-    } while (close_stations.length < 10 && while_counter < 100)
+    } while (close_stations.length < 10 && while_counter < 10)
     
     close_stations = sortByDistance(close_stations)
     updateStation(close_stations[0], close_stations)
