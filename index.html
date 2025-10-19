@@ -8,18 +8,34 @@
     <body>
         <div class="title-div">
             <h1>worldwave</h1>
-            <p>get yo radio stuff here!!!</p>
         </div>
-        <div class="random-button-div">
-            <button id="randomButton">Random Radio</button>
+        <div class="main-box">
+            <div class="changer-div">
+                <div class="rotary-div" id="coordRotaryDiv">
+                    <p>Your Coordinates are:</p>
+                    <b id="latLongP"></b>
+                </div>
+            </div>
+            <div class="other-stuff-div">
+                <div class="player-div">
+                    <div class="rotary-div" id="stationRotaryDiv">
+                        <p id="stationP">Station</p>
+                    </div>
+                    <div class="station-info-div" id="infoDiv"></div>
+                    <div class="rotary-div" id="volumeRotaryDiv">
+                        <p id="volumeP">Volume</p>
+                    </div>
+                </div>
+                <div class="lat-long-div">
+                    <input type="number" id="latInput" max="90" min="-90" placeholder="latitude">
+                    <input type="number" id="longInput" max="180" min="-180" placeholder="longitude">
+                    <button id="latLongBtn">Update Coordinates</button>
+                </div>
+                <div class="random-button-div">
+                    <button id="randomButton">Random Radio</button>
+                </div>
+            </div>
         </div>
-        <div class="lat-long-div">
-            <input type="number" id="latInput" max="90" min="-90" placeholder="latitude">
-            <input type="number" id="longInput" max="180" min="-180" placeholder="longitude">
-            <button id="latLongBtn">Update Coordinates</button>
-        </div>
-        <div class="station-info-div" id="infoDiv"></div>
-        <div class="rotary-div" id="rotaryDiv"></div>
         <audio id="audio"></audio>
         <script src="script.js"></script>
     </body>

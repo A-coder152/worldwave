@@ -4,7 +4,12 @@ const info_div = document.getElementById("infoDiv")
 const lat_input = document.getElementById("latInput")
 const long_input = document.getElementById("longInput")
 const lat_long_btn = document.getElementById("latLongBtn")
-const rotary_div = document.getElementById("rotaryDiv")
+const coord_rotary_div = document.getElementById("coordRotaryDiv")
+const station_rotary_div = document.getElementById("stationRotaryDiv")
+const volume_rotary_div = document.getElementById("volumeRotaryDiv")
+const lat_long_tag = document.getElementById('latLongP')
+const station_tag = document.getElementById('stationP')
+const volume_tag = document.getElementById('volumeP')
 
 let all_stations = []
 let close_stations = []
@@ -125,7 +130,15 @@ function createRotaryKnob(parent, settings){
     new_knob.addEventListener('pointerup', onPointerUp)
     new_knob.addEventListener('pointercancel', onPointerUp)
 
-    return {div: new_knob, getValue, setValue}
+    function byebye(){
+        new_knob.removeEventListener('pointerdown', onPointerDown)
+        new_knob.removeEventListener('pointermove', onPointerMove)
+        new_knob.removeEventListener('pointerup', onPointerUp)
+        new_knob.removeEventListener('pointercancel', onPointerUp)
+        new_knob.remove()
+    }
+
+    return {div: new_knob, getValue, setValue, byebye}
 }
 
 
@@ -136,6 +149,11 @@ api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&or
     api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
         console.log(results)
         all_stations = results
+        coord_rotary_knob.byebye()
+        coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
+            min: 0, max: all_stations.length, value: 0, size: 300, 
+            changed: (value) => lat_long_tag.textContent = value
+        })
     })
 })
 
@@ -148,12 +166,8 @@ lat_long_btn.addEventListener("click", async () => {
     latitude = String(clamp(parseFloat(lat_input.value), 90, -90))
     longitude = String(clamp(parseFloat(long_input.value), 180, -180))
     close_stations = []
-    let while_counter = 0
-    do {
-        const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=${Math.pow(10, while_counter + 3)}`)
-        close_stations = results
-        while_counter += 1
-    } while (close_stations.length < 10 && while_counter < 10)
+    const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=10000000`)
+    close_stations = results
     
     close_stations = sortByDistance(close_stations)
     updateStation(close_stations[0], close_stations)
@@ -161,7 +175,20 @@ lat_long_btn.addEventListener("click", async () => {
     console.log(close_stations[0])
 })
 
-const test_rotary_button = createRotaryKnob(rotary_div, {
-    min: 0, max: 100, value: 25, size: 300, 
+let coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
+    min: 0, max: 100, value: 0, size: 300, 
+    changed: (value) => lat_long_tag.textContent = value
+})
+
+const station_rotary_knob = createRotaryKnob(station_rotary_div, {
+    min: 0, max: 25, value: 0, size: 100, 
     changed: (value) => console.log(value)
+})
+
+const volume_rotary_knob = createRotaryKnob(volume_rotary_div, {
+    min: 0, max: 100, value: 50, size: 100, 
+    changed: (value) => {
+        audio.volume = value / 100
+        volume_tag.textContent = `Volume: ${value}`
+    }
 })
