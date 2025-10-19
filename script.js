@@ -11,7 +11,8 @@ let audio_sources = [
     "https://cdn.freesound.org/previews/829/829713_12698134-lq.mp3"
 ]
 
-let stations = []
+let all_stations = []
+let close_stations = []
 let latitude = 0
 let longitude = 0
 
@@ -24,33 +25,56 @@ function api_request(api, rqdict){
     })
 }
 
-function updateStation(station){
+function clamp(a, max, min){
+    return Math.min(max, Math.max(a, min))
+}
+
+function updateStation(station, list){
     audio.src = station.url_resolved
-    audio.play()
+    audio.play().catch(() => {
+        // list.splice(list.indexOf(station), 1)
+        // updateStation(list[0], list)
+        console.log("this guy is broken")
+    })
     info_div.innerHTML = `
     <p>Radio Name: ${station.name}</p>
     <p>Country: ${station.country}</p>`
+    console.log(station)
 }
 
-api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true").then(results =>{
+function sortByDistance(sortee) {
+    return sortee.sort((a, b) => {
+        return (a.geo_distance || Infinity) - (b.geo_distance || Infinity) 
+    })
+}
+
+api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
     console.log(results)
-    stations = results
+    all_stations = results
 })
 
 random_audio_button.addEventListener("click", () => {
-    let chosen_station = stations[Math.floor(Math.random() * stations.length)]
-    updateStation(chosen_station)
+    let chosen_station = all_stations[Math.floor(Math.random() * all_stations.length)]
+    updateStation(chosen_station, all_stations)
 })
 
-api_request("https://all.api.radio-browser.info/json/stations/search?limit=10&has_geo_info=true&hidebroken=true&geo_lat=45&geo_long=-80&geo_distance=100000&order=geo_distance").then(results => {
+api_request("https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=35&geo_long=140&geo_distance=100000&order=geo_distance").then(results => {
     console.log(results)
 })
 
-lat_long_btn.addEventListener("click", () => {
-    latitude = lat_input.value
-    longitude = long_input.value
-    api_request(`https://all.api.radio-browser.info/json/stations/search?limit=10&has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=100000&order=random`).then(results => {
-        console.log(results)
-        updateStation(results[Math.floor(Math.random() * results.length)])
-})
+lat_long_btn.addEventListener("click", async () => {
+    latitude = String(clamp(parseFloat(lat_input.value), 90, -90))
+    longitude = String(clamp(parseFloat(long_input.value), 180, -180))
+    close_stations = []
+    let while_counter = 0
+    do {
+        const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=${Math.pow(10, (while_counter / 10) + 3)}`)
+        close_stations = results
+        while_counter += 1
+    } while (close_stations.length < 10 && while_counter < 100)
+    
+    close_stations = sortByDistance(close_stations)
+    updateStation(close_stations[0], close_stations)
+    console.log(close_stations)
+    console.log(close_stations[0])
 })
