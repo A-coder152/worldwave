@@ -10,11 +10,13 @@ const volume_rotary_div = document.getElementById("volumeRotaryDiv")
 const lat_long_tag = document.getElementById('latLongP')
 const station_tag = document.getElementById('stationP')
 const volume_tag = document.getElementById('volumeP')
+const location_button = document.getElementById('getLocationButton')
 
 let all_stations = []
 let close_stations = []
 let latitude = 0
 let longitude = 0
+let station_dist = false
 
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
@@ -35,9 +37,11 @@ function updateStation(station, list){
         console.log("this guy is broken", error)
         if (error.name === "AbortError") {return}
         setTimeout(() => {
-            list.splice(list.indexOf(station), 1)
-            sortByDistance(list)
-            updateStation(station.geo_distance ? list[0]: list[Math.floor(Math.random() * list.length)], list)
+            let sigma = list.indexOf(station)
+            list.splice(sigma, 1)
+            sortByDistance(list, {latitude, longitude})
+            updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
+            if (station_dist) {station_rotary_knob.setValue(close_stations.length - list.length + list.indexOf(station))}
         }, 0)   
     })
 
@@ -47,9 +51,21 @@ function updateStation(station, list){
     console.log(station)
 }
 
-function sortByDistance(sortee) {
+function sortByDistance(sortee, coords) {
+    function iloveradians(a){return a * Math.PI / 180}
+    function haversine(lat1, long1, lat2, long2){
+        const dlat = iloveradians(lat2 - lat1)
+        const dlong = iloveradians(long2 - long1)
+        let a = Math.sin(dlat / 2) * Math.sin(dlat / 2)
+        a += Math.sin(dlong / 2) * Math.sin(dlong / 2) * Math.cos(iloveradians(lat1)) * Math.cos(iloveradians(lat2))
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+        return c * 6371;
+    }
+
     return sortee.sort((a, b) => {
-        return (a.geo_distance || Infinity) - (b.geo_distance || Infinity) 
+        const dist_a = a.geo_lat && a.geo_long ? haversine(a.geo_lat, a.geo_long, coords.latitude, coords.longitude) : Infinity
+        const dist_b = b.geo_long && b.geo_lat ? haversine(b.geo_lat, b.geo_long, coords.latitude, coords.longitude) : Infinity
+        return dist_a - dist_b
     })
 }
 
@@ -148,26 +164,38 @@ function fetch_all_stations(){
         api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
             console.log(results)
             all_stations = results
-            coord_rotary_knob.byebye()
-            coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
-                min: 0, max: all_stations.length, value: 0, size: 300, 
-                changed: (value) => lat_long_tag.textContent = value
-            })
             localforage.setItem("allStations", {timestamp: Date.now(), stations: all_stations})
         })
     })
 }
 
+async function getCloseStations(){
+    station_dist = true
+    close_stations = []
+    close_stations = sortByDistance(all_stations, {latitude, longitude}).slice(0, 25)
+    
+    updateStation(close_stations[0], close_stations)
+    console.log(close_stations)
+    console.log(close_stations[0])
+    station_rotary_knob.setValue(0)
+}
+
 async function load_stations(){
     let saved_stations = await localforage.getItem("allStations")
-    if (saved_stations && Date.now() < saved_stations.timestamp + 7200000){
+    if (saved_stations && Date.now() < saved_stations.timestamp + 10800000){
         all_stations = saved_stations.stations
     } else {fetch_all_stations()}
+    coord_rotary_knob.byebye()
+    coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
+        min: 0, max: all_stations.length, value: 0, size: 300, 
+        changed: (value) => lat_long_tag.textContent = value
+    })
 }
 
 load_stations()
 
 random_audio_button.addEventListener("click", () => {
+    station_dist = false
     let chosen_station = all_stations[Math.floor(Math.random() * all_stations.length)]
     updateStation(chosen_station, all_stations)
 })
@@ -175,14 +203,15 @@ random_audio_button.addEventListener("click", () => {
 lat_long_btn.addEventListener("click", async () => {
     latitude = String(clamp(parseFloat(lat_input.value), 90, -90))
     longitude = String(clamp(parseFloat(long_input.value), 180, -180))
-    close_stations = []
-    const results = await api_request(`https://all.api.radio-browser.info/json/stations/search?has_geo_info=true&hidebroken=true&geo_lat=${latitude}&geo_long=${longitude}&geo_distance=10000000`)
-    close_stations = results
-    
-    close_stations = sortByDistance(close_stations)
-    updateStation(close_stations[0], close_stations)
-    console.log(close_stations)
-    console.log(close_stations[0])
+    getCloseStations()
+})
+
+location_button.addEventListener("click", async () => {
+    navigator.geolocation.getCurrentPosition((position) => {
+        latitude = position.coords.latitude
+        longitude = position.coords.longitude
+        getCloseStations()
+    })
 })
 
 let coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
@@ -192,7 +221,10 @@ let coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
 
 const station_rotary_knob = createRotaryKnob(station_rotary_div, {
     min: 0, max: 25, value: 0, size: 100, 
-    changed: (value) => console.log(value)
+    changed: (value) => {
+        station_tag.textContent = `Station #${value + 1}`
+        if (close_stations[value]) {updateStation(close_stations[value], close_stations)}
+    }
 })
 
 const volume_rotary_knob = createRotaryKnob(volume_rotary_div, {
