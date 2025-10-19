@@ -17,6 +17,7 @@ let close_stations = []
 let latitude = 0
 let longitude = 0
 let station_dist = false
+let has_been_sorted = false
 
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
@@ -32,12 +33,14 @@ function clamp(a, max, min){
 }
 
 function updateStation(station, list){
+    all_stations = sortByCountry(all_stations)
+    let sigma = list.indexOf(station)
+    if (coord_rotary_knob.getValue() != sigma) {coord_rotary_knob.setValue(list.indexOf(station))}
     audio.src = station.url_resolved
     audio.play().catch((error) => {
         console.log("this guy is broken", error)
         if (error.name === "AbortError") {return}
         setTimeout(() => {
-            let sigma = list.indexOf(station)
             list.splice(sigma, 1)
             sortByDistance(list, {latitude, longitude})
             updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
@@ -66,6 +69,14 @@ function sortByDistance(sortee, coords) {
         const dist_a = a.geo_lat && a.geo_long ? haversine(a.geo_lat, a.geo_long, coords.latitude, coords.longitude) : Infinity
         const dist_b = b.geo_long && b.geo_lat ? haversine(b.geo_lat, b.geo_long, coords.latitude, coords.longitude) : Infinity
         return dist_a - dist_b
+    })
+}
+
+function sortByCountry(sortee){
+    return sortee.sort((a, b) => {
+        const country_a = a.country.trim().toLowerCase() || 'ZZZZZZZZ'
+        const country_b = b.country.trim().toLowerCase() || 'ZZZZZZZZ'
+        return country_a.localeCompare(country_b)
     })
 }
 
@@ -157,6 +168,18 @@ function createRotaryKnob(parent, settings){
     return {div: new_knob, getValue, setValue, byebye}
 }
 
+async function getCloseStations(){
+    lat_long_tag.textContent = `(${latitude}, ${longitude})`
+    station_dist = true
+    close_stations = []
+    close_stations = sortByDistance(all_stations, {latitude, longitude}).slice(0, 25)
+    
+    updateStation(close_stations[0], close_stations)
+    console.log(close_stations)
+    console.log(close_stations[0])
+    station_rotary_knob.setValue(0)
+}
+
 function fetch_all_stations(){
     api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100").then(results =>{
         console.log(results)
@@ -169,17 +192,6 @@ function fetch_all_stations(){
     })
 }
 
-async function getCloseStations(){
-    station_dist = true
-    close_stations = []
-    close_stations = sortByDistance(all_stations, {latitude, longitude}).slice(0, 25)
-    
-    updateStation(close_stations[0], close_stations)
-    console.log(close_stations)
-    console.log(close_stations[0])
-    station_rotary_knob.setValue(0)
-}
-
 async function load_stations(){
     let saved_stations = await localforage.getItem("allStations")
     if (saved_stations && Date.now() < saved_stations.timestamp + 10800000){
@@ -188,8 +200,19 @@ async function load_stations(){
     coord_rotary_knob.byebye()
     coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
         min: 0, max: all_stations.length, value: 0, size: 300, 
-        changed: (value) => lat_long_tag.textContent = value
+        changed: (value) => {
+            const new_station = all_stations[value]
+            console.log(new_station)
+            updateStation(new_station, all_stations)
+            if (new_station.geo_lat && new_station.geo_long) {
+                latitude = geo_lat
+                longitude = geo_long
+                getCloseStations()
+                console.log("bggbfs")
+            }
+        }
     })
+    all_stations = sortByCountry(all_stations)
 }
 
 load_stations()
