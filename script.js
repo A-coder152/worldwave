@@ -141,21 +141,31 @@ function createRotaryKnob(parent, settings){
     return {div: new_knob, getValue, setValue, byebye}
 }
 
-
-
-api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100").then(results =>{
-    console.log(results)
-    all_stations = results
-    api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
+function fetch_all_stations(){
+    api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100").then(results =>{
         console.log(results)
         all_stations = results
-        coord_rotary_knob.byebye()
-        coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
-            min: 0, max: all_stations.length, value: 0, size: 300, 
-            changed: (value) => lat_long_tag.textContent = value
+        api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
+            console.log(results)
+            all_stations = results
+            coord_rotary_knob.byebye()
+            coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
+                min: 0, max: all_stations.length, value: 0, size: 300, 
+                changed: (value) => lat_long_tag.textContent = value
+            })
+            localforage.setItem("allStations", {timestamp: Date.now(), stations: all_stations})
         })
     })
-})
+}
+
+async function load_stations(){
+    let saved_stations = await localforage.getItem("allStations")
+    if (saved_stations && Date.now() < saved_stations.timestamp + 7200000){
+        all_stations = saved_stations.stations
+    } else {fetch_all_stations()}
+}
+
+load_stations()
 
 random_audio_button.addEventListener("click", () => {
     let chosen_station = all_stations[Math.floor(Math.random() * all_stations.length)]
