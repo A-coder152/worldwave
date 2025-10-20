@@ -37,7 +37,11 @@ function clamp(a, max, min){
 function updateStation(station, list){
     all_stations = sortByCountry(all_stations)
     let sigma = list.indexOf(station)
-    if (coord_rotary_knob.getValue() != sigma && can_play) {coord_rotary_knob.setValue(sigma)}
+    let figma = all_stations.indexOf(station)
+    if (coord_rotary_knob.getValue() != figma && can_play) {
+        console.log(coord_rotary_knob.getValue(), figma)
+        coord_rotary_knob.onletgo(figma)
+    }
     audio.src = station.url_resolved
     audio.play().catch((error) => {
         console.log("this guy is broken", error)
@@ -48,16 +52,18 @@ function updateStation(station, list){
         }
         setTimeout(() => {
             list.splice(sigma, 1)
+            if (station_dist) {
+                station_rotary_knob.setValue(close_stations.length - list.length + sigma)}
+                coord_rotary_knob.onletgo(figma)
             sortByDistance(list, {latitude, longitude})
             updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
-            if (station_dist) {station_rotary_knob.setValue(close_stations.length - list.length + sigma)}
         }, 0)   
     })
 
     info_div.innerHTML = `
     <p class=${station.name.length > 23? "" : "bigp"}>${station.name}</p>
     <p class=${station.country.length > 23? "" : "bigp"}>${station.country}</p>`
-    console.log(station)
+    console.log("up", station)
 }
 
 function sortByDistance(sortee, coords) {
@@ -111,6 +117,8 @@ function createRotaryKnob(parent, settings){
         new_knob.style.transform = `rotate(${current_degree}deg)`
         settings.changed(Math.round(degreesToValue(current_degree)))
     }
+
+    function onletgo(value){settings.onletgo(value)}
 
     function setValue(value) {render(valueToDegrees(value))}
 
@@ -175,7 +183,7 @@ function createRotaryKnob(parent, settings){
         new_knob.remove()
     }
 
-    return {div: new_knob, getValue, setValue, byebye}
+    return {div: new_knob, getValue, setValue, byebye, onletgo}
 }
 
 async function getCloseStations(){
@@ -212,7 +220,7 @@ async function load_stations(){
     coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
         min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * all_stations.length), size: 300, 
         onletgo: (value) => {
-            station_dist = true
+            coord_rotary_knob.setValue(value)
             can_play = true
             const new_station = all_stations[parseInt(value)]
             if (!new_station){
