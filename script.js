@@ -223,6 +223,7 @@ async function getCloseStations(){
 }
 
 async function fetch_all_stations(){
+    no_coordinates.textContent = "fetching radio stations, please wait..."
     let results = await api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100")
     console.log(results)
     all_stations = results
@@ -230,6 +231,7 @@ async function fetch_all_stations(){
     console.log(results)
     all_stations = results
     localforage.setItem("allStations", {timestamp: Date.now(), stations: all_stations})
+    no_coordinates.textContent = "radio stations ready!"
 }
 
 async function load_stations(){
