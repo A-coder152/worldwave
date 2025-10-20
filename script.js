@@ -23,6 +23,7 @@ let station_dist = false
 let has_been_sorted = false
 let can_play = false
 let location_req_going_out = false
+let station_switcher = false
 
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
@@ -71,8 +72,10 @@ function updateStation(station, list){
         setTimeout(() => {
             list.splice(sigma, 1)
             if (station_dist) {
-                station_rotary_knob.setValue(close_stations.length - list.length + sigma)}
-                coord_rotary_knob.onletgo(figma)
+                station_rotary_knob.setValue(close_stations.length - list.length + sigma)
+                station_switcher = true
+            }
+            coord_rotary_knob.onletgo(figma)
             sortByDistance(list, {latitude, longitude})
             updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
         }, 0)   
@@ -235,10 +238,12 @@ async function load_stations(){
     let saved_stations = await localforage.getItem("allStations")
     if (saved_stations && Date.now() < saved_stations.timestamp + 10800000){
         all_stations = saved_stations.stations
-    } else {fetch_all_stations()}
+    } else {
+        await fetch_all_stations()
+    }
     coord_rotary_knob.byebye()
     coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
-        min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * 100), size: 300, 
+        min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * all_stations.length), size: 300, 
         onletgo: (value) => {
             coord_rotary_knob.setValue(value)
             can_play = true
@@ -247,7 +252,11 @@ async function load_stations(){
                 console.log(all_stations, all_stations[parseInt(value)], value)
                 return
             }
-            console.log(new_station)
+            console.log(station_switcher, new_station)
+            if (station_switcher){
+                station_switcher = false
+                return
+            }
             if (new_station.geo_lat && new_station.geo_long) {
                 latitude = Math.round(new_station.geo_lat * 10000) / 10000
                 longitude = Math.round(new_station.geo_long * 10000) / 10000
@@ -310,6 +319,7 @@ let coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
 const station_rotary_knob = createRotaryKnob(station_rotary_div, {
     min: 0, max: 25, value: 0, size: 100, 
     changed: (value) => {
+        station_switcher = can_play
         can_play = true
         station_tag.textContent = `Station #${value + 1}`
         if (close_stations[value]) {updateStation(close_stations[value], close_stations)}
