@@ -12,6 +12,8 @@ const station_tag = document.getElementById('stationP')
 const volume_tag = document.getElementById('volumeP')
 const no_coordinates = document.getElementById('noCoordinates')
 const location_button = document.getElementById('getLocationButton')
+const address_input = document.getElementById('addressInput')
+const address_button = document.getElementById("getYoAddressButton")
 
 let all_stations = []
 let close_stations = []
@@ -213,8 +215,7 @@ async function getCloseStations(){
     updateStation(close_stations[0], close_stations)
     console.log(close_stations)
     console.log(close_stations[0])
-    station_rotary_knob.setValue(0)
-    getZeLocation().then((address) => lat_long_tag.textContent = `${address} (${latitude}, ${longitude})`)
+    getZeLocation().then((address) => lat_long_tag.textContent = `${address || "doxxing u rq"} (${latitude}, ${longitude})`)
     location_req_going_out = true
 }
 
@@ -282,6 +283,21 @@ location_button.addEventListener("click", async () => {
     navigator.geolocation.getCurrentPosition((position) => {
         latitude = position.coords.latitude
         longitude = position.coords.longitude
+        getCloseStations()
+    })
+})
+
+address_button.addEventListener("click", () => {
+    api_request(`https://nominatim.openstreetmap.org/search?q=${address_input.value}&format=json&limit=1`, {'User-Agent': 'worldwave'}).then(response =>{
+        console.log(response, response[0])
+        let ahahah = response[0]
+        console.log(ahahah)
+        if (!ahahah.name){
+            lat_long_tag.textContent = "Hell (for inputting a stupid location) /j"
+            return
+        }
+        latitude = (parseFloat(ahahah.boundingbox[0]) + parseFloat(ahahah.boundingbox[1])) / 2
+        longitude = (parseFloat(ahahah.boundingbox[2]) + parseFloat(ahahah.boundingbox[3])) / 2
         getCloseStations()
     })
 })

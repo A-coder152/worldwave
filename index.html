@@ -13,6 +13,10 @@
             <div class="changer-div">
                 <div class="rotary-div" id="coordRotaryDiv">
                     <p class="bigp">Big Switcher Dial</p>
+                    <div class="random-button-div">
+                        <button id="randomButton">Random Radio</button>
+                        <button id="getLocationButton">Use Your Coordinates</button>
+                    </div>
                 </div>
             </div>
             <div class="other-stuff-div">
@@ -33,9 +37,9 @@
                     <input type="number" id="longInput" max="180" min="-180" placeholder="longitude">
                     <button id="latLongBtn">Update Coordinates</button>
                 </div>
-                <div class="random-button-div">
-                    <button id="randomButton">Random Radio</button>
-                    <button id="getLocationButton">Use Your Coordinates</button>
+                <div class="lat-long-div">
+                    <input type="text" id="addressInput" max="90" min="-90" placeholder="City">
+                    <button id="getYoAddressButton">Switch Location to City</button>
                 </div>
             </div>
         </div>
