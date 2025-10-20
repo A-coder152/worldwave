@@ -20,6 +20,7 @@ let longitude = 0
 let station_dist = false
 let has_been_sorted = false
 let can_play = false
+let location_req_going_out = false
 
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
@@ -27,6 +28,21 @@ function api_request(api, rqdict){
             throw new Error(`error ${response} code ${response.status} caused by request at ${api} for ${rqdict}`)
         }
         return response.json()
+    })
+}
+
+async function getZeLocation(){
+    if (location_req_going_out) {return}
+    let location
+    console.log("we on the case")
+    return api_request(`https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&zoom=10`, {'User-Agent': 'worldwave'}).then(response => {
+        const data = response
+        console.log(latitude, longitude)
+        if (!data.address){location = 'Literally Nowhere'}
+        else {location = `${data.address.city}, ${data.address.state || data.address.province || ''}, ${data.address.country}`}
+        console.log(location)
+        location_req_going_out = false
+        return location
     })
 }
 
@@ -58,6 +74,7 @@ function updateStation(station, list){
             sortByDistance(list, {latitude, longitude})
             updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
         }, 0)   
+        location_req_going_out = false
     })
 
     info_div.innerHTML = `
@@ -197,6 +214,8 @@ async function getCloseStations(){
     console.log(close_stations)
     console.log(close_stations[0])
     station_rotary_knob.setValue(0)
+    getZeLocation().then((address) => lat_long_tag.textContent = `${address} (${latitude}, ${longitude})`)
+    location_req_going_out = true
 }
 
 function fetch_all_stations(){
