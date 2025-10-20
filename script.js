@@ -238,7 +238,7 @@ async function load_stations(){
     } else {fetch_all_stations()}
     coord_rotary_knob.byebye()
     coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
-        min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * all_stations.length), size: 300, 
+        min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * 100), size: 300, 
         onletgo: (value) => {
             coord_rotary_knob.setValue(value)
             can_play = true
