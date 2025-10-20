@@ -222,16 +222,14 @@ async function getCloseStations(){
     location_req_going_out = true
 }
 
-function fetch_all_stations(){
-    api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100").then(results =>{
-        console.log(results)
-        all_stations = results
-        api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random").then(results =>{
-            console.log(results)
-            all_stations = results
-            localforage.setItem("allStations", {timestamp: Date.now(), stations: all_stations})
-        })
-    })
+async function fetch_all_stations(){
+    let results = await api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random&limit=100")
+    console.log(results)
+    all_stations = results
+    results = await api_request("https://all.api.radio-browser.info/json/stations?hidebroken=true&order=random")
+    console.log(results)
+    all_stations = results
+    localforage.setItem("allStations", {timestamp: Date.now(), stations: all_stations})
 }
 
 async function load_stations(){
