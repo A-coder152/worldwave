@@ -48,6 +48,9 @@ body{
     gap: 2rem;
     height: 100%;
 }
+.station-info-div p{
+    margin: 1rem;
+}
 
 .other-stuff-div {
     margin: 0 5rem;
@@ -128,7 +131,7 @@ input::-webkit-inner-spin-button {
     transform: translateX(-50%);
     background: #eeeeee;
     border-radius: 2px;
-    box-shadow: 0 0 calc(var(--size)*0.1) rgba(233,233,233,.4);
+    box-shadow: 0 0 calc(var(--size)*0.05) rgba(233,233,233,.4);
     pointer-events: none;
 }
 
@@ -161,4 +164,12 @@ input::-webkit-inner-spin-button {
 #latLongP{
     margin: 0.3rem 0 1.3rem 0;
     font-size: large;
+}
+
+#noCoordinates{
+    color: #50545a;
+}
+
+.bigp {
+    font-size: 2rem;
 }

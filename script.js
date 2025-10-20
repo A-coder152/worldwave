@@ -10,6 +10,7 @@ const volume_rotary_div = document.getElementById("volumeRotaryDiv")
 const lat_long_tag = document.getElementById('latLongP')
 const station_tag = document.getElementById('stationP')
 const volume_tag = document.getElementById('volumeP')
+const no_coordinates = document.getElementById('noCoordinates')
 const location_button = document.getElementById('getLocationButton')
 
 let all_stations = []
@@ -18,6 +19,7 @@ let latitude = 0
 let longitude = 0
 let station_dist = false
 let has_been_sorted = false
+let can_play = false
 
 function api_request(api, rqdict){
     return fetch(api, rqdict).then(response => {
@@ -35,22 +37,26 @@ function clamp(a, max, min){
 function updateStation(station, list){
     all_stations = sortByCountry(all_stations)
     let sigma = list.indexOf(station)
-    if (coord_rotary_knob.getValue() != sigma) {coord_rotary_knob.setValue(list.indexOf(station))}
+    if (coord_rotary_knob.getValue() != sigma && can_play) {coord_rotary_knob.setValue(sigma)}
     audio.src = station.url_resolved
     audio.play().catch((error) => {
         console.log("this guy is broken", error)
         if (error.name === "AbortError") {return}
+        if (error.name === "NotAllowedError") {
+            info_div.innerHTML = "Please interact with the site so it can play!"
+            return
+        }
         setTimeout(() => {
             list.splice(sigma, 1)
             sortByDistance(list, {latitude, longitude})
             updateStation(station_dist ? list[sigma]: list[Math.floor(Math.random() * list.length)], list)
-            if (station_dist) {station_rotary_knob.setValue(close_stations.length - list.length + list.indexOf(station))}
+            if (station_dist) {station_rotary_knob.setValue(close_stations.length - list.length + sigma)}
         }, 0)   
     })
 
     info_div.innerHTML = `
-    <p>Radio Name: ${station.name}</p>
-    <p>Country: ${station.country}</p>`
+    <p class=${station.name.length > 23? "" : "bigp"}>${station.name}</p>
+    <p class=${station.country.length > 23? "" : "bigp"}>${station.country}</p>`
     console.log(station)
 }
 
@@ -139,6 +145,10 @@ function createRotaryKnob(parent, settings){
     function onPointerUp(e) {
         pointer_down = false
         try {new_knob.releasePointerCapture(e.pointerId)} catch {}
+        if (settings.bigboy){
+            console.log("bigggg")
+            settings.onletgo(degreesToValue(current_degree))
+        }
     }
 
     function updateMouse(e) {
@@ -169,6 +179,7 @@ function createRotaryKnob(parent, settings){
 }
 
 async function getCloseStations(){
+    no_coordinates.textContent = ""
     lat_long_tag.textContent = `(${latitude}, ${longitude})`
     station_dist = true
     close_stations = []
@@ -199,18 +210,26 @@ async function load_stations(){
     } else {fetch_all_stations()}
     coord_rotary_knob.byebye()
     coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
-        min: 0, max: all_stations.length, value: 0, size: 300, 
-        changed: (value) => {
-            const new_station = all_stations[value]
+        min: 0, max: all_stations.length, bigboy: true, value: Math.floor(Math.random() * all_stations.length), size: 300, 
+        onletgo: (value) => {
+            station_dist = true
+            can_play = true
+            const new_station = all_stations[parseInt(value)]
+            if (!new_station){
+                console.log(all_stations, all_stations[parseInt(value)], value)
+                return
+            }
             console.log(new_station)
-            updateStation(new_station, all_stations)
             if (new_station.geo_lat && new_station.geo_long) {
-                latitude = geo_lat
-                longitude = geo_long
+                latitude = Math.round(new_station.geo_lat * 10000) / 10000
+                longitude = Math.round(new_station.geo_long * 10000) / 10000
                 getCloseStations()
                 console.log("bggbfs")
+            } else {
+                updateStation(new_station, all_stations)
+                no_coordinates.textContent = "No coordinates for this radio"
             }
-        }
+    }, changed: (value) => console.log(value)
     })
     all_stations = sortByCountry(all_stations)
 }
@@ -218,18 +237,21 @@ async function load_stations(){
 load_stations()
 
 random_audio_button.addEventListener("click", () => {
+    can_play = true
     station_dist = false
     let chosen_station = all_stations[Math.floor(Math.random() * all_stations.length)]
     updateStation(chosen_station, all_stations)
 })
 
 lat_long_btn.addEventListener("click", async () => {
+    can_play = true
     latitude = String(clamp(parseFloat(lat_input.value), 90, -90))
     longitude = String(clamp(parseFloat(long_input.value), 180, -180))
     getCloseStations()
 })
 
 location_button.addEventListener("click", async () => {
+    can_play = true
     navigator.geolocation.getCurrentPosition((position) => {
         latitude = position.coords.latitude
         longitude = position.coords.longitude
@@ -245,6 +267,7 @@ let coord_rotary_knob = createRotaryKnob(coord_rotary_div, {
 const station_rotary_knob = createRotaryKnob(station_rotary_div, {
     min: 0, max: 25, value: 0, size: 100, 
     changed: (value) => {
+        can_play = true
         station_tag.textContent = `Station #${value + 1}`
         if (close_stations[value]) {updateStation(close_stations[value], close_stations)}
     }
@@ -253,6 +276,7 @@ const station_rotary_knob = createRotaryKnob(station_rotary_div, {
 const volume_rotary_knob = createRotaryKnob(volume_rotary_div, {
     min: 0, max: 100, value: 50, size: 100, 
     changed: (value) => {
+        can_play = true
         audio.volume = value / 100
         volume_tag.textContent = `Volume: ${value}`
     }
